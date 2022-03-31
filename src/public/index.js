@@ -12,12 +12,17 @@ Swal.fire({
     }
 }).then(result => {
     user = result.value;
+    time = new Date;
+    timestamp = `${time.getHours()}:${time.getMinutes()}`;
+    socket.emit('message', {user, type:'newUser', message: '', timestamp})
 });
 
 chatBox.addEventListener('keyup', evt => {
     if (evt.key === 'Enter') {
         if (chatBox.value.trim().length > 0) {
-            socket.emit('message', { user, message: chatBox.value.trim() });
+            time = new Date;
+            timestamp = `${time.getHours()}:${time.getMinutes()}`;
+            socket.emit('message', { user, type:'message', message: chatBox.value.trim(), timestamp });
             chatBox.value=""
         }
     }
@@ -27,7 +32,12 @@ chatBox.addEventListener('keyup', evt => {
 socket.on('log', data => {
     let messages = "";
     data.forEach(log => {
-        messages = messages + `${log.user} dice: ${log.message} <br>`
+        if ((log.type === 'newUser') && (log.user !== user)) {
+            messages = messages + `<b>${log.timestamp}</b> - <em>${log.user} se conectó.</em> <br>`
+        } else if (log.type === 'message') {
+            messages = messages + `<b>${log.timestamp}</b> - ${log.user} dice: ${log.message} <br>`
+        }
     });
     log.innerHTML = messages;
 })
+
